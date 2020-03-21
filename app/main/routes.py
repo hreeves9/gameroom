@@ -3,6 +3,7 @@ from . import main
 from .forms import LoginForm
 
 room_count = {}
+room_members = {}
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
@@ -13,11 +14,12 @@ def index():
         session['room'] = form.room.data
         if form.room.data not in room_count:
             room_count[form.room.data] = 1
+            room_members[form.room.data] = [form.name.data]
             return redirect(url_for('.game'))
         else:
             if room_count[form.room.data] < 4:
                 room_count[form.room.data] += 1
-                print("HELLO")
+                room_members[form.room.data].append(form.name.data)
                 return redirect(url_for('.game'))
             else:
                 print("uh oh spaghetti os. the room is full.")
