@@ -5,6 +5,9 @@
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
         <script type="text/javascript" charset="utf-8">
             var socket;
+            var playersHand = new Array();
+            var playingHand = new Array();
+
             var name = '{{ name }}';
             $(document).ready(function(){
                 socket = io.connect('http://' + document.domain + ':' + location.port + '/game');
@@ -21,8 +24,23 @@
                 });
                 socket.on('deal', function(data) {
                     var json = JSON.parse(data);
-                    console.log(json[name]);
-                    
+                    playersHand = json[name];
+                    console.log(playersHand);
+
+                    for(var i = 0; i < playersHand.length; i++){
+                        var text = document.createElement("a");
+
+                        text.setAttribute("href", "#");
+                        var id = convert_to_value(playersHand[i][0]) + convert_to_suit(playersHand[i][1]);
+                        var funcname = "add_card(\"" + id + "\")";
+                        text.setAttribute("onclick", funcname);
+                        text.setAttribute("id", id);
+                        text.innerHTML = convert_to_value(playersHand[i][0]) + " of " + convert_to_suit(playersHand[i][1]);
+                        document.getElementById("hand").appendChild(text);
+
+                        document.getElementById("hand").appendChild(document.createElement("br"));
+
+                    }
                 })
 
             });
@@ -38,6 +56,63 @@
                 socket.emit('startgame');
 
             }
+
+            function add_card(id){
+                if(playingHand.length < 5){
+                    var card = document.getElementById(id);
+                    var text = card.innerHTML;
+                    card.innerHTML = "Selected: " + text;
+                    var funcname = "remove_card(\"" + id + "\")";
+                    card.setAttribute("onclick", funcname);
+                    playingHand.push(id);
+                    console.log(playingHand);
+                }
+            }
+
+            function remove_card(id){
+                var card = document.getElementById(id);
+                var text = card.innerHTML;
+                card.innerHTML = text.slice(10);
+                var funcname = "add_card(\"" + id + "\")";
+                card.setAttribute("onclick", funcname);
+                var index = playingHand.indexOf(id);
+                playingHand.splice(index, 1);
+                console.log(playingHand);
+            }
+
+            function convert_to_suit(suitNumber){
+                if(suitNumber == 1){
+                    return "D";
+                }
+                if(suitNumber == 2){
+                    return "C";
+                }
+                if(suitNumber == 3){
+                    return "H";
+                }
+                if(suitNumber == 4){
+                    return "S";
+                }
+            }
+
+            function convert_to_value(valueNumber){
+                if(valueNumber == 15){
+                    return "2";
+                }
+                if(valueNumber == 14){
+                    return "A";
+                }
+                if(valueNumber == 13){
+                    return "K";
+                }
+                if(valueNumber == 12){
+                    return "Q";
+                }
+                if(valueNumber == 11){
+                    return "J";
+                }
+                return valueNumber.toString();
+            }
             
         </script>
     </head>
@@ -47,5 +122,11 @@
         <a href="#" onclick="leave_room();">Leave this room</a>
 
         <a id = "startgame" href="#" onclick="start_game();">Begin game</a>
+
+        <br>
+        <br>
+
+        <div id = "hand"></div>
+        
     </body>
 </html>
