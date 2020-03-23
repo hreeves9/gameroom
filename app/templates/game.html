@@ -7,6 +7,7 @@
             var socket;
             var playersHand = new Array();
             var playingHand = new Array();
+            var currentTurn = "";
 
             var name = '{{ name }}';
             $(document).ready(function(){
@@ -23,7 +24,9 @@
                     x.style.visibility = "hidden";
                 });
                 socket.on('deal', function(data) {
+                    //set who goes first                    
                     var json = JSON.parse(data);
+                    currentTurn = json['whose_turn']
                     playersHand = json[name];
                     console.log(playersHand);
 
@@ -43,6 +46,12 @@
                     var upcardslist = document.getElementById("upcards")
                     upcardslist.innerHTML = "Recently played cards:<br/>"
                     console.log(upcardslist.childElementCount);
+
+                    //Render the pass button
+                    if (name == currentTurn){
+                        render_pass_button();
+                    }
+
                 })
                 //handle the upcard being changed and render the most recently played cards
                 socket.on('change_upcard', function(data) {
@@ -54,13 +63,13 @@
                         oldUpcards.removeChild(oldUpcards.childNodes[i])
                     }
                     
-                    console.log("new data")
                     console.log(data)
                     //add new upcards
+                    currentTurn = data['whose_turn']
                     var updatedCards = data['upcards']
                     for(var i = 0; i < updatedCards.length; i++){
                         var text = document.createElement("p");
-                        text.setAttribute("id", updatedCards[i]);
+                        //text.setAttribute("id_up", updatedCards[i]);
                         var innerText = "";
                         if (updatedCards[i].length > 2){
                             innerText = updatedCards[i].substring(0, 2) + " of " + updatedCards[i].substring(2, 3);
@@ -71,8 +80,33 @@
                         text.innerHTML = innerText;
                         oldUpcards.appendChild(text);
                     }
+                    if (name == currentTurn){
+                        render_pass_button();
+                    }
                 });
-
+                //successfully played a move, delete the cards you played
+                socket.on('delete_last_move', function(data) {
+                    var last_move = data['upcards']
+                    for (var i = 0; i < last_move.length; i++){
+                        var used_card = document.getElementById(last_move[i])
+                        used_card.remove();
+                    }
+                    playingHand = [];
+                    check_button();
+                    delete_pass_button();
+                });
+                //display a javascript alert when the attempted move is invalid
+                //TODO: Add better messages for why it's invalid?
+                socket.on('invalid_move', function(data) {
+                    alert("invalid move")
+                });
+                //handle the case where a player passed their turn, render pass button for the new person who's playing
+                socket.on('pass_turn', function(data) {
+                    currentTurn = data['whose_turn']
+                    if (currentTurn == name) {
+                        render_pass_button();
+                    }
+                });
             });
             function leave_room() {
                 socket.emit('left', {}, function() {
@@ -86,9 +120,27 @@
                 socket.emit('startgame');
 
             }
-
+            function render_pass_button(){
+                var text = document.createElement("a");
+                text.setAttribute("href", "#");
+                var funcname = "pass_turn()";
+                var id = "please_work_pass_button"
+                text.setAttribute("onclick", funcname);
+                text.setAttribute("id", id);
+                text.innerHTML = "pass"; //added the break in here, made removing cards easier
+                document.getElementById("passbutton").appendChild(text);
+            }
+            function delete_pass_button(){
+                var pass_button = document.getElementById("passbutton")
+                pass_button.removeChild(pass_button.childNodes[0]); //this might be a dumb way to do this lol, can perhaps remove by id directly
+            }
+            //function that emits the "i passed" message
+            function pass_turn(){
+                socket.emit('passturn');
+                delete_pass_button();
+            }
             function add_card(id){
-                if(playingHand.length < 5){
+                if(playingHand.length < 5  && name == currentTurn){ //if it's your turn, then you're allowed to select cards
                     var card = document.getElementById(id);
                     var text = card.innerHTML;
                     card.innerHTML = "Selected: " + text;
@@ -136,18 +188,18 @@
             function play_cards(){
 
                 // TODO: change validHand to be the hand validation function
-                var validHand = new Boolean(true);
-                if (validHand){
-                    for(var i = 0; i < playingHand.length; ++i){
-                        var card = document.getElementById(playingHand[i]);
-                        card.remove()
-                    }
-                    socket.emit('changeupcard', {upcards: playingHand});
-                    playingHand = [];
-                }
+                socket.emit('attemptedplay', {upcards: playingHand});
+                // var validHand = new Boolean(true);
+                // if (validHand){
+                //     for(var i = 0; i < playingHand.length; ++i){
+                //         var card = document.getElementById(playingHand[i]);
+                //         card.remove()
+                //     }
+                //     playingHand = [];
+                // }
 
                 //need to check the button because it should be removed at this point
-                check_button()
+                // check_button()
             }
 
             function convert_to_suit(suitNumber){
@@ -202,9 +254,9 @@
         <br>
 
         <div id = "playbutton"></div>
-
         <br>
         <br>
+        <div id = "passbutton"></div>
         <br>
         <br>
 
