@@ -4,6 +4,8 @@ from .forms import LoginForm
 
 room_count = {}
 room_members = {}
+turn = 0
+upcards = []
 
 @main.route('/', methods=['GET', 'POST'])
 def index():

@@ -29,13 +29,38 @@ def startgame():
 	emit('start_game', {'msg': " "}, room=room)
 	hands = bigtwo.deal(bigtwo.create_deck())
 	json_dictionary = {}
+	whoseTurn = routes.room_members[room][0] #TODO: make this be whoever has the 3 of spades... can do this in this file by checking hands
 	for i in range(4):
 		json_dictionary[routes.room_members[room][i]] = hands[i]
+	json_dictionary.update( {'whose_turn': whoseTurn})
+	print(json_dictionary)
 	json_object = json.dumps(json_dictionary)
 	emit('deal', json_object, room=room)
 
-@socketio.on('changeupcard', namespace='/game')
+@socketio.on('attemptedplay', namespace='/game')
 def changeupcard(json):
-	#TODO: update session variable holding the upcard, update turn variable
+	# If this move is valid, update the upcards and whose turn it is
+	if (bigtwo.valid_move(routes.upcards, json['upcards'])):
+		routes.upcards = json['upcards']	
+		room = session.get('room')
+		routes.turn = routes.turn + 1 
+		routes.turn = routes.turn % 4
+		whoseTurn = routes.room_members[room][routes.turn]
+		json.update({'whose_turn':whoseTurn})
+		emit('delete_last_move', json)
+		emit('change_upcard', json, room=room)
+	else:
+		emit('invalid_move', json)
+
+@socketio.on('passturn', namespace='/game')
+def passturn():
 	room = session.get('room')
-	emit('change_upcard', json, room=room)
+	routes.turn = routes.turn + 1 
+	routes.turn = routes.turn % 4
+	whoseTurn = routes.room_members[room][routes.turn]
+	json = {}
+	json.update({'whose_turn':whoseTurn})
+	emit('pass_turn', json, room=room)
+	
+
+#TODO: Add end of round logic (ie who wins, and starting another round afterwards), keep track of wins/losses (for gambling purposes)?
