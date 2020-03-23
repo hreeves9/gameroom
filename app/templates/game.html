@@ -35,13 +35,43 @@
                         var funcname = "add_card(\"" + id + "\")";
                         text.setAttribute("onclick", funcname);
                         text.setAttribute("id", id);
-                        text.innerHTML = convert_to_value(playersHand[i][0]) + " of " + convert_to_suit(playersHand[i][1]);
+                        text.innerHTML = convert_to_value(playersHand[i][0]) + " of " + convert_to_suit(playersHand[i][1]) + "<br />"; //added the break in here, made removing cards easier
                         document.getElementById("hand").appendChild(text);
-
-                        document.getElementById("hand").appendChild(document.createElement("br"));
-
                     }
+                    
+                    //initialize the "recently played" header
+                    var upcardslist = document.getElementById("upcards")
+                    upcardslist.innerHTML = "Recently played cards:<br/>"
+                    console.log(upcardslist.childElementCount);
                 })
+                //handle the upcard being changed and render the most recently played cards
+                socket.on('change_upcard', function(data) {
+                    //clear out old upcards
+                    console.log("hi")
+                    var oldUpcards = document.getElementById("upcards")
+
+                    for (var i = oldUpcards.childElementCount; i > 0; --i) {
+                        oldUpcards.removeChild(oldUpcards.childNodes[i])
+                    }
+                    
+                    console.log("new data")
+                    console.log(data)
+                    //add new upcards
+                    var updatedCards = data['upcards']
+                    for(var i = 0; i < updatedCards.length; i++){
+                        var text = document.createElement("p");
+                        text.setAttribute("id", updatedCards[i]);
+                        var innerText = "";
+                        if (updatedCards[i].length > 2){
+                            innerText = updatedCards[i].substring(0, 2) + " of " + updatedCards[i].substring(2, 3);
+                        } else 
+                        {
+                            innerText = updatedCards[i].substring(0, 1) + " of " + updatedCards[i].substring(1, 2);
+                        }
+                        text.innerHTML = innerText;
+                        oldUpcards.appendChild(text);
+                    }
+                });
 
             });
             function leave_room() {
@@ -66,6 +96,18 @@
                     card.setAttribute("onclick", funcname);
                     playingHand.push(id);
                     console.log(playingHand);
+
+                    //added a "play selected card(s)" button, added when one card is selected
+                    if (playingHand.length == 1){ 
+                        var doctext = document.createElement("a");
+                        doctext.setAttribute("href", "#");
+                        var id_button = "play_card";
+                        var funcname_button = "play_cards()";
+                        doctext.setAttribute("onclick", funcname_button);
+                        doctext.setAttribute("id", id_button);
+                        doctext.innerHTML = "play selected card(s)";
+                        document.getElementById("playbutton").appendChild(doctext);
+                    }
                 }
             }
 
@@ -78,6 +120,34 @@
                 var index = playingHand.indexOf(id);
                 playingHand.splice(index, 1);
                 console.log(playingHand);
+
+                //this will remove play cards button when no more cards are selected
+                check_button()
+            }
+
+            function check_button() {
+                //remove play cards button when no more cards are selected
+                if (playingHand.length == 0){
+                    var play_button = document.getElementById("playbutton")
+                    play_button.removeChild(play_button.childNodes[0]); //this might be a dumb way to do this lol, can perhaps remove by id directly
+                }
+            }
+
+            function play_cards(){
+
+                // TODO: change validHand to be the hand validation function
+                var validHand = new Boolean(true);
+                if (validHand){
+                    for(var i = 0; i < playingHand.length; ++i){
+                        var card = document.getElementById(playingHand[i]);
+                        card.remove()
+                    }
+                    socket.emit('changeupcard', {upcards: playingHand});
+                    playingHand = [];
+                }
+
+                //need to check the button because it should be removed at this point
+                check_button()
             }
 
             function convert_to_suit(suitNumber){
@@ -127,6 +197,18 @@
         <br>
 
         <div id = "hand"></div>
+        
+        <br>
+        <br>
+
+        <div id = "playbutton"></div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <div id = "upcards"></div>
         
     </body>
 </html>
