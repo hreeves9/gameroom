@@ -52,7 +52,7 @@
                         render_pass_button();
                     }
 
-                })
+                });
                 //handle the upcard being changed and render the most recently played cards
                 socket.on('change_upcard', function(data) {
                     //clear out old upcards
@@ -107,7 +107,50 @@
                         render_pass_button();
                     }
                 });
+                socket.on('wipe_upcards', function() {
+                    var oldUpcards = document.getElementById("upcards")
+
+                    for (var i = oldUpcards.childElementCount; i > 0; --i) {
+                        oldUpcards.removeChild(oldUpcards.childNodes[i]);
+                    }
+                });
+                // display a little alert with the winner!
+                //TODO: Make this cooler?
+                socket.on('display_winner', function(data) {
+                    message = data['name'] + " won this round!";
+                    alert(message)
+                });
+                // when the game is done, we need to clear the board
+                socket.on('clear_board', function() {
+                    // clear what's left of the previous hand
+                    hand = document.getElementById("hand")
+                    while (hand.firstChild) {
+                        hand.removeChild(hand.lastChild)
+                    }
+
+                    //clear out play button
+                    hand = document.getElementById("playbutton")
+                    while (hand.firstChild) {
+                        hand.removeChild(hand.lastChild)
+                    }
+
+                    //clear out pass button
+                    hand = document.getElementById("passbutton")
+                    while (hand.firstChild) {
+                        hand.removeChild(hand.lastChild)
+                    }
+
+                    //clear out upcards
+                    hand = document.getElementById("upcards")
+                    while (hand.firstChild) {
+                        hand.removeChild(hand.lastChild)
+                    }
+
+                    //clear out the bug with keeping one card in hand
+                    playingHand = [];
+                });
             });
+
             function leave_room() {
                 socket.emit('left', {}, function() {
                     socket.disconnect();
@@ -116,10 +159,12 @@
                     window.location.href = "{{ url_for('main.index') }}";
                 });
             }
+
             function start_game() {
                 socket.emit('startgame');
-
+                
             }
+
             function render_pass_button(){
                 var text = document.createElement("a");
                 text.setAttribute("href", "#");
@@ -130,15 +175,18 @@
                 text.innerHTML = "pass"; //added the break in here, made removing cards easier
                 document.getElementById("passbutton").appendChild(text);
             }
+
             function delete_pass_button(){
                 var pass_button = document.getElementById("passbutton")
                 pass_button.removeChild(pass_button.childNodes[0]); //this might be a dumb way to do this lol, can perhaps remove by id directly
             }
+
             //function that emits the "i passed" message
             function pass_turn(){
                 socket.emit('passturn');
                 delete_pass_button();
             }
+
             function add_card(id){
                 if(playingHand.length < 5  && name == currentTurn){ //if it's your turn, then you're allowed to select cards
                     var card = document.getElementById(id);
@@ -186,20 +234,11 @@
             }
 
             function play_cards(){
-
-                // TODO: change validHand to be the hand validation function
-                socket.emit('attemptedplay', {upcards: playingHand});
-                // var validHand = new Boolean(true);
-                // if (validHand){
-                //     for(var i = 0; i < playingHand.length; ++i){
-                //         var card = document.getElementById(playingHand[i]);
-                //         card.remove()
-                //     }
-                //     playingHand = [];
-                // }
-
-                //need to check the button because it should be removed at this point
-                // check_button()
+                if (playingHand.length == document.getElementById("hand").childElementCount){
+                    socket.emit('endgame', {upcards: playingHand})
+                } else {
+                    socket.emit('attemptedplay', {upcards: playingHand});  
+                }
             }
 
             function convert_to_suit(suitNumber){
@@ -245,6 +284,7 @@
 
         <a id = "startgame" href="#" onclick="start_game();">Begin game</a>
 
+        <!--TODO: Add a div that's displaying player wins/monetary amounts ;) -->
         <br>
         <br>
 
