@@ -1,7 +1,7 @@
 from flask import session
 from flask_socketio import emit, join_room, leave_room
 from .. import socketio
-from . import routes, bigtwo
+from . import routes, bigtwo, hand_checker
 import json
 
 
@@ -40,7 +40,7 @@ def startgame():
 @socketio.on('attemptedplay', namespace='/game')
 def changeupcard(json):
 	# If this move is valid, update the upcards and whose turn it is
-	if (bigtwo.valid_move(routes.upcards, json['upcards'])):
+	if (hand_checker.valid_move(routes.upcards, json['upcards'])):
 		routes.upcards = json['upcards']	
 		room = session.get('room')
 		routes.turn = routes.turn + 1 

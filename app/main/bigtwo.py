@@ -56,17 +56,3 @@ def deal(deck):
 		returnList.append(sort_hand(item))
 
 	return returnList
-
-def valid_move(upcards, attempted_play):
-	'''Validating that the attempted play can be played on the given upcards'''
-	if (len(upcards) == 0): #First move of the game
-		return True
-
-	#TODO: add in game logic!!! what I wrote below just checks the values of two cards (and only for one card moves)
-	old_card = upcards[0]
-	new_card = attempted_play[0]
-	new_val = new_card[0:1]
-	new_val = int(new_val)
-	old_val = old_card[0:1]
-	old_val = int(old_val)
-	return True
