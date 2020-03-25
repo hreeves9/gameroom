@@ -24,8 +24,18 @@
                     x.style.visibility = "hidden";
                 });
                 socket.on('deal', function(data) {
-                    //set who goes first                    
+                    //set who goes first                 
                     var json = JSON.parse(data);
+
+                    var playerNames = json['names']
+                    var gamblingAmounts = json['gambling_amounts']
+                    for(var i = 0; i < playerNames.length; i++){
+                        var text = document.createElement("p");
+                        text.setAttribute("id", playerNames[i]);
+                        text.innerHTML = playerNames[i] + ": " + gamblingAmounts[i] + "    ";
+                        document.getElementById("scoreboard").appendChild(text);
+                    }
+
                     currentTurn = json['whose_turn']
                     playersHand = json[name];
                     console.log(playersHand);
@@ -40,7 +50,8 @@
                         text.setAttribute("id", id);
                         //IGNORE THIS IN THE COMMIT 
                         //you'll see why :)
-                        text.innerHTML = "<img style = \"width: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">"; //added the break in here, made removing cards easier
+                        //ok <3
+                        text.innerHTML = "<img style = \"width: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">";
                         document.getElementById("hand").appendChild(text);
                     }
                     
@@ -151,8 +162,19 @@
                         hand.removeChild(hand.lastChild)
                     }
 
+                    hand = document.getElementById("scoreboard")
+                    while (hand.firstChild) {
+                        hand.removeChild(hand.lastChild)
+                    }
                     //clear out the bug with keeping one card in hand
                     playingHand = [];
+                });
+                // this is used to determine gambling stuff
+                socket.on('determine_rankings', function(data) {
+                    jsonobj = {'name': name, 'num_left': document.getElementById("hand").childElementCount}
+                    if (data['name'] != name){
+                        socket.emit('seedrankingarray', jsonobj)
+                    }
                 });
             });
 
@@ -196,7 +218,7 @@
                 if(playingHand.length < 5  && name == currentTurn){ //if it's your turn, then you're allowed to select cards
                     var card = document.getElementById(id);
                     var text = card.innerHTML;
-                    card.innerHTML = "<img style = \"width: 100px; margin-top: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">"; //added the break in here, made removing cards easier
+                    card.innerHTML = "<img style = \"width: 100px; margin-top: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">";
                     var funcname = "remove_card(\"" + id + "\")";
                     card.setAttribute("onclick", funcname);
                     playingHand.push(id);
@@ -290,6 +312,11 @@
         <a id = "startgame" href="#" onclick="start_game();">Begin game</a>
 
         <!--TODO: Add a div that's displaying player wins/monetary amounts ;) -->
+        <br>
+        <br>
+
+        <div id = "scoreboard"></div>
+
         <br>
         <br>
 
