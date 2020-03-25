@@ -2,9 +2,11 @@ from flask import session, redirect, url_for, render_template, request
 from . import main
 from .forms import LoginForm
 
-room_count = {}
-room_members = {}
+room_data = {}
+# room_count = {}
+# room_members = {}
 turn = 0
+consecutive_passes = 0
 upcards = []
 
 @main.route('/', methods=['GET', 'POST'])
@@ -14,17 +16,19 @@ def index():
     if form.validate_on_submit():
         session['name'] = form.name.data
         session['room'] = form.room.data
-        if form.room.data not in room_count:
-            room_count[form.room.data] = 1
-            room_members[form.room.data] = [form.name.data]
+        if form.room.data not in room_data: #room_count:            
+            room_data[form.room.data] = {'upcards': [], 'room_members': [], 'turn': 0, 'consecutive_passes': 0, 'room_count': 1, 'num_wins': [0, 0, 0, 0]}
+            room_data[form.room.data]['room_members'].append(form.name.data)
+            print(room_data)
             return redirect(url_for('.game'))
         else:
-            if room_count[form.room.data] < 4:
-                room_count[form.room.data] += 1
-                room_members[form.room.data].append(form.name.data)
+            if room_data[form.room.data]['room_count'] < 4:
+                room_data[form.room.data]['room_members'].append(form.name.data)
+                room_data[form.room.data]['room_count'] = room_data[form.room.data]['room_count'] + 1
+                print(room_data)
                 return redirect(url_for('.game'))
             else:
-                print("uh oh spaghetti os. the room is full.")
+                print("room is full")
 
     elif request.method == 'GET':
         form.name.data = session.get('name', '')

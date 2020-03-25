@@ -1,5 +1,27 @@
 def valid_move(trump_hand, current_hand):
-	if len(trump_hand) == 0:
+	# Parse Values First
+	
+	ctrump_hand = []
+	ccurrent_hand = []
+
+	for item in trump_hand:
+		ctrump_hand.append({"value" : convert_to_value(item), "suit": convert_to_suit(item)})
+
+	for item in current_hand:
+		ccurrent_hand.append({"value" : convert_to_value(item), "suit": convert_to_suit(item)})
+
+	ctrump_hand = sort_hand(ctrump_hand)
+	ccurrent_hand = sort_hand(ccurrent_hand)
+
+
+	if len(trump_hand) == 0: # We still need to check that what we are attempting to play is valid
+		if len(ccurrent_hand) == 2:
+			return valid_two(ccurrent_hand)
+		elif len(ccurrent_hand) == 3:
+			return valid_three(ccurrent_hand)
+		elif len(ccurrent_hand) == 5:
+			return valid_five(ccurrent_hand)
+		# otherwise just playing one single card, which is always valid
 		return True
 
 	if len(trump_hand) != len(current_hand):
