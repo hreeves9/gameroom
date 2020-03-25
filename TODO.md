@@ -1,8 +1,6 @@
 #TODO
 
-- create turn function on server to send trump hand as well as whoever's turn it is
-- client side: see whether this hand can be played based on whether it tops trump hand
+- end of set of turns/end of game functionality (+scoring)
 - graphics maybe? lol
 - video chat
-- scoring?
 - gambling element

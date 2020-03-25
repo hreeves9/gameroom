@@ -38,7 +38,9 @@
                         var funcname = "add_card(\"" + id + "\")";
                         text.setAttribute("onclick", funcname);
                         text.setAttribute("id", id);
-                        text.innerHTML = convert_to_value(playersHand[i][0]) + " of " + convert_to_suit(playersHand[i][1]) + "<br />"; //added the break in here, made removing cards easier
+                        //IGNORE THIS IN THE COMMIT 
+                        //you'll see why :)
+                        text.innerHTML = "<img src = \"\"><br />"; //added the break in here, made removing cards easier
                         document.getElementById("hand").appendChild(text);
                     }
                     
