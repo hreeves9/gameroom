@@ -40,13 +40,13 @@
                         text.setAttribute("id", id);
                         //IGNORE THIS IN THE COMMIT 
                         //you'll see why :)
-                        text.innerHTML = "<img src = \"\"><br />"; //added the break in here, made removing cards easier
+                        text.innerHTML = "<img style = \"width: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">"; //added the break in here, made removing cards easier
                         document.getElementById("hand").appendChild(text);
                     }
                     
                     //initialize the "recently played" header
                     var upcardslist = document.getElementById("upcards")
-                    upcardslist.innerHTML = "Recently played cards:<br/>"
+                    upcardslist.innerHTML = "Recently played cards:<br><br>"
                     console.log(upcardslist.childElementCount);
 
                     //Render the pass button
@@ -70,15 +70,18 @@
                     currentTurn = data['whose_turn']
                     var updatedCards = data['upcards']
                     for(var i = 0; i < updatedCards.length; i++){
-                        var text = document.createElement("p");
+                        var text = document.createElement("img");
                         //text.setAttribute("id_up", updatedCards[i]);
                         var innerText = "";
                         if (updatedCards[i].length > 2){
-                            innerText = updatedCards[i].substring(0, 2) + " of " + updatedCards[i].substring(2, 3);
+                            innerText = updatedCards[i].substring(0, 2) + updatedCards[i].substring(2, 3);
                         } else 
                         {
-                            innerText = updatedCards[i].substring(0, 1) + " of " + updatedCards[i].substring(1, 2);
+                            innerText = updatedCards[i].substring(0, 1) + updatedCards[i].substring(1, 2);
                         }
+                        innerText = "https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + innerText + ".png"
+                        text.setAttribute("src", innerText);
+                        text.setAttribute("style", "width:75px")
                         text.innerHTML = innerText;
                         oldUpcards.appendChild(text);
                     }
@@ -193,7 +196,7 @@
                 if(playingHand.length < 5  && name == currentTurn){ //if it's your turn, then you're allowed to select cards
                     var card = document.getElementById(id);
                     var text = card.innerHTML;
-                    card.innerHTML = "Selected: " + text;
+                    card.innerHTML = "<img style = \"width: 100px; margin-top: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">"; //added the break in here, made removing cards easier
                     var funcname = "remove_card(\"" + id + "\")";
                     card.setAttribute("onclick", funcname);
                     playingHand.push(id);
@@ -216,7 +219,7 @@
             function remove_card(id){
                 var card = document.getElementById(id);
                 var text = card.innerHTML;
-                card.innerHTML = text.slice(10);
+                card.innerHTML = "<img style = \"width: 75px;\" src = \"https://raw.githubusercontent.com/hreeves9/gameroom/master/assets/" + id + ".png\">";;
                 var funcname = "add_card(\"" + id + "\")";
                 card.setAttribute("onclick", funcname);
                 var index = playingHand.indexOf(id);
