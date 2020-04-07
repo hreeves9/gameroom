@@ -6,4 +6,5 @@ from wtforms.validators import Required
 class LoginForm(FlaskForm):
     name = StringField('Name', validators=[Required()])
     room = StringField('Room', validators=[Required()])
+    stakes = StringField('Stakes') # , validators=[Required()]
     submit = SubmitField('Enter Gameroom')

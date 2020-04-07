@@ -3,6 +3,7 @@ from flask_socketio import emit, join_room, leave_room
 from .. import socketio
 from . import routes, bigtwo, hand_checker
 import json
+import time
 
 
 @socketio.on('joined', namespace='/game')
@@ -38,6 +39,11 @@ def startgame():
 
 	# update the dictionary with whose turn it is
 	json_dictionary.update( {'whose_turn': whoseTurn})
+
+	# update the dictionary with names and gambling amounts
+	json_dictionary.update({'names': routes.room_data[room]['room_members']})
+	json_dictionary.update({'gambling_amounts': routes.room_data[room]['gambling']})
+
 	print(json_dictionary)
 	json_object = json.dumps(json_dictionary)
 	emit('deal', json_object, room=room)
@@ -96,8 +102,14 @@ def endgame(json):
 		# update who won
 		index_of_winner = routes.room_data[room]['room_members'].index(name)
 		routes.room_data[room]['num_wins'][index_of_winner] += 1
-		print("NUMBER OF WINS:")
-		print(routes.room_data[room]['num_wins'][index_of_winner])
+		routes.room_data[room]['cards_left'][index_of_winner] = 0
+
+		# update gambling info? will this work? TODO: Better way to do this?
+		emit('determine_rankings', champ, room=room)
+		time.sleep(5) # giving time for the rankings to be determined... needed for concurrency, i set arbitrary time tho lol
+		print(routes.room_data[room]['cards_left'])
+		determine_gambling_standings(room)
+		print(routes.room_data[room]['gambling'])
 
 		# fix consecutive passes
 		routes.room_data[room]['consecutive_passes'] = 0
@@ -108,10 +120,52 @@ def endgame(json):
 	else:
 		emit('invalid_move', json)
 
+@socketio.on('seedrankingarray', namespace='/game')
+def seedrankingarray(json):
+	room = session.get('room')
+	name = session.get('name')
+	index_of_winner = routes.room_data[room]['room_members'].index(name)
+	routes.room_data[room]['cards_left'][index_of_winner] = json['num_left']
+
 def three_of_diamonds_index(hands):
 	for i in range(4):
 		hand = hands[i]
 		for card in hand:
 			if card[0] == 3 and card[1] == 1:
 				return i
-#TODO: Add end of round logic (ie who wins, and starting another round afterwards), keep track of wins/losses (for gambling purposes)?
+
+def determine_gambling_standings(room):
+	# Gotta do a lotta funky indexing n such lol
+	cards_left = routes.room_data[room]['cards_left'].copy()
+	cards_left.sort()
+	print(cards_left)
+	print(routes.room_data[room]['cards_left'])
+	stakes = routes.room_data[room]['stakes']
+
+	# UPDATE WINNER
+	winner = routes.room_data[room]['cards_left'].index(0)
+	routes.room_data[room]['gambling'][winner] += routes.room_data[room]['stakes']
+
+	if cards_left[1] == cards_left[2] and cards_left[1] == cards_left[3]: # CASE WHERE 2-4 ARE TIED
+		for i in range(4):
+			if i != winner:
+				routes.room_data[room]['gambling'][i] -= (stakes / 3)
+	elif cards_left[1] == cards_left[2]: # CASE WHERE 2-3 ARE TIED
+		last_place = routes.room_data[room]['cards_left'].index(cards_left[3])
+		routes.room_data[room]['gambling'][last_place] -= (1.5 * stakes)
+		for i in range(4):
+			if i != winner and i != last_place:
+				routes.room_data[room]['gambling'][i] += (stakes / 4)
+	elif cards_left[2] == cards_left[3]: # CASE WHERE 3-4 ARE TIED
+		second_place = routes.room_data[room]['cards_left'].index(cards_left[1])
+		routes.room_data[room]['gambling'][second_place] += (0.5 * stakes)
+		for i in range(4):
+			if i != winner and i != second_place:
+				routes.room_data[room]['gambling'][i] -= (stakes * 0.75)
+	else: # ALL THINGS DIFFERENT
+		last_place = routes.room_data[room]['cards_left'].index(cards_left[3])
+		routes.room_data[room]['gambling'][last_place] -= (1.5 * stakes)
+		second_place = routes.room_data[room]['cards_left'].index(cards_left[1])
+		routes.room_data[room]['gambling'][second_place] += (0.5 * stakes)
+
+#TODO: keep track of wins/losses (for gambling purposes)?
